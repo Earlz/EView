@@ -1,0 +1,18 @@
+{!namespace Earlz.EView.Helpers!}
+{!base Earlz.EView.Helpers.HtmlElement!}
+{@ 
+	Location as string;
+	CssClass as string;
+	Text as string;
+@}
+{#
+	//Notice that this is a very dense way of doing it, but it is more clean then directly hard coding it as in HyperLink2
+#}
+<a href="{=Location=}" {!if CssClass!=null!} class="{=CssClass=}"{!end!}>{=Text=}</a>
+{#
+/*
+<a href="{=Location=}" {= ("class=\""+CssClass+"\"").OnlyIf(CssClass!=null) =}>{=Text=}</a> <!-- experimental syntax -->
+<a href="{=Location=}" {= ("class=\"$CssClass$\"").OnlyIf(CssClass!=null) =}>{=Text=}</a> <!-- proposed eventual syntax -->
+<a href="{=Location=}" {= CssClass.ToAttribute("class") =}</a> <!-- Super duper syntax :D -->
+*/
+#}
