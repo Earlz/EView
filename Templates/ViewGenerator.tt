@@ -1,4 +1,4 @@
-﻿<#@ template language="C#v3.5" hostspecific="true" #>
+<#@ template language="C#v3.5" hostspecific="true" #>
 <#@ output extension="cs" #>
 <#@ assembly name="System.Core" #>
 <#@ import namespace="System.IO" #>
@@ -8,6 +8,18 @@
 <#@ import namespace="System.Linq" #>
 
 <#
+
+/*CONFIGURATION VARIABLES*/
+	string Namespace="EViewEngine"; //default namespace to use for views
+	string DefaultBaseClass="Earlz.EView.Internal.EViewDummy"; //default base class name to use (You must specify a valid class implementing IEView!)
+	string SearchPattern="*.html"; //What files to process. Use the | symbol to match multiple filters.
+	string TemplateDirectory=""; //Note! This is relative to the location of the T4 template, not the project! (usually you want "" here)
+	string CustomUsing=@"
+		//custom using statements for your views go here:
+	
+	";
+
+
 /*
 Copyright (c) 2010 - 2011 Jordan "Earlz/hckr83" Earls  <http://www.Earlz.biz.tm>
 All rights reserved.
@@ -37,18 +49,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 This file is part of the EViewEngine project.
 */
-#>
 
-<#
-/*CONFIGURATION VARIABLES*/
-	string Namespace="EViewEngine"; //default namespace to use
-	string DefaultBaseClass="Earlz.EView.Internal.EViewDummy"; //default base class name to use (You must specify a valid class implementing IEView!)
-	string SearchPattern="*.html|*.htm"; //What files to process. Use the | symbol to match multiple filters.
-	string TemplateDirectory=""; //Note! This is relative to the location of the T4 template, not the project! (usually you want "" here)
-	string CustomUsing=@"
-		//custom using statements for your views go here:
-	
-	";
+
 	
 	string p=Path.GetDirectoryName(Host.TemplateFile);
 	
@@ -76,6 +78,9 @@ This file is part of the EViewEngine project.
 		}
 	}
 #>
+
+/*Static code*/
+
 //Internal base class
 namespace Earlz.EView
 {
@@ -105,9 +110,7 @@ namespace Earlz.EView.Internal{
 	}
 	
 }
-
-
-
+//a "class feature". Our static code can't be below it (it'd be cleaner if so though) 
 <#+
 	class EViewGenerator{
 		const bool UseAutoVars=false; //set to true to enable the autovars
@@ -137,7 +140,7 @@ namespace Earlz.EView.Internal{
 		}
 		
 		
-		
+		//the block for {@ @}
 		int DoVariables (int start)
 		{
 			int end=input.Substring(start+1).IndexOf("@}");
@@ -172,6 +175,7 @@ namespace Earlz.EView.Internal{
 			}		
 			return end+=3; //+=2 for @} ending
 		}
+		//the block for {= =}
 		int WriteVariable(int start){
 			int end=input.Substring(start+1).IndexOf("=}");
 			if(end==-1){
@@ -193,6 +197,8 @@ namespace Earlz.EView.Internal{
 			}else{
 				code=v.Name;
 			}
+			//This is here so that we can try to detect if we are outputting a collection
+			//if it's a collection print all the items (or render if it's an IEView)
 			view.AppendLine(@"{
 				object v;
 				try{
@@ -226,7 +232,7 @@ namespace Earlz.EView.Internal{
 			
 			return end+=3;
 		}
-		
+		//the {- -} block for code outside of the Render function
 		int WriteRawOutput(int start){
 			int end=input.Substring(start+1).IndexOf("-}");
 			if(end==-1){
@@ -240,7 +246,7 @@ namespace Earlz.EView.Internal{
 			
 			return end+=3;
 		}
-		
+		//the {# #} blockf or putting raw code inside the render function
 		int WriteCode(int start){
 			int end=input.Substring(start+1).IndexOf("#}");
 			if(end==-1){
@@ -251,6 +257,7 @@ namespace Earlz.EView.Internal{
 			view.AppendLine(block);
 			return end+=3;
 		}
+		//The {+ +} block for writing code outside of the view's class.
 		int WriteExternalCode(int start){
 			int end=input.Substring(start+1).IndexOf("+}");
 			if(end==-1){
@@ -335,6 +342,7 @@ namespace Earlz.EView.Internal{
 			
 			return end+=3;
 		}
+		//foreach keyword
 		public void DoForeach(string block,int stop){
 			view.Append("foreach(");
 			var pieces=block.Substring(stop+1).Split(new char[]{' '});
@@ -358,7 +366,7 @@ namespace Earlz.EView.Internal{
 			v.VarType=pieces[2];
 			Variables.Add(v);
 		}
-		
+		//the main generate loop
 		public string Generate(){
 			char last='\0';
 			view.Append("__Output.Append(@\"");
@@ -468,7 +476,7 @@ public "+(Layout??"IEView")+@" Layout{get;set;}
 		__Output.Append(v.EViewRender());
 	}
 }
-} //for namespace
+} //close the namespace
 ");
 			return output.ToString();
 		
